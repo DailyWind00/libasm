@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <errno.h>
 
 #define OK "\033[1;32m[OK]\033[0m"
 #define FAIL "\033[1;31m[FAIL]\033[0m"
@@ -7,6 +9,7 @@
 size_t	ft_strlen(const char *s);
 char	*ft_strcpy(char *dest, const char *src);
 int		ft_strcmp(const char *s1, const char *s2);
+ssize_t ft_write(int fd, const void *buf, size_t count);
 
 static void test_strlen(void)
 {
@@ -140,14 +143,51 @@ static void test_strcmp_unsigned(void)
 		((expected > 0) == (result > 0)) ? OK : FAIL);
 }
 
+static void test_write(void)
+{
+	const char *str = "Hello from ft_write!\n";
+	size_t len = strlen(str);
+
+	printf("\n========== ft_write ==========\n");
+
+	printf("libc write:\n");
+	errno = 0;
+	ssize_t expected = write(STDOUT_FILENO, str, len);
+	int expected_errno = errno;
+
+	printf("ft_write:\n");
+	errno = 0;
+	ssize_t result = ft_write(STDOUT_FILENO, str, len);
+	int result_errno = errno;
+
+	printf("\nExpected return: %zd\n", expected);
+	printf("ft_write return: %zd\n", result);
+
+	printf("Expected errno: %d\n", expected_errno);
+	printf("ft_write errno: %d\n", result_errno);
+
+	if (result == expected)
+		printf("Return value: " OK "\n");
+	else
+		printf("Return value: " FAIL "\n");
+
+	if (result >= 0)
+		printf("SUCCESS TEST: %s\n",
+			result == (ssize_t)len ? OK : FAIL);
+	else
+		printf("SUCCESS TEST: " FAIL "\n");
+}
+
 int main(void)
 {
 	test_strlen();
-	
+
 	test_strcpy();
 
 	test_strcmp();
 	test_strcmp_unsigned();
+
+	test_write();
 
 	return 0;
 }
