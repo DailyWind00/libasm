@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #define OK "\033[1;32m[OK]\033[0m"
 #define FAIL "\033[1;31m[FAIL]\033[0m"
@@ -11,6 +12,7 @@ char	*ft_strcpy(char *dest, const char *src);
 int		ft_strcmp(const char *s1, const char *s2);
 ssize_t ft_write(int fd, const void *buf, size_t count);
 ssize_t ft_read(int fd, void *buf, size_t count);
+char 	*ft_strdup(const char *s);
 
 static void test_strlen(void)
 {
@@ -293,6 +295,50 @@ static void test_read_error(void)
 		printf("ERROR TEST: " FAIL" \n");
 }
 
+static void test_strdup(void)
+{
+	const char *tests[] = {
+		"",
+		"a",
+		"Hello",
+		"Hello, World!",
+		"Assembly is fun!",
+		"This is a longer string used to test ft_strdup."
+	};
+
+	size_t count = sizeof(tests) / sizeof(tests[0]);
+
+	printf("\n========== ft_strdup ==========\n");
+
+	for (size_t i = 0; i < count; i++)
+	{
+		char *expected = strdup(tests[i]);
+		char *result = ft_strdup(tests[i]);
+
+		int allocated = result != NULL;
+		int content_ok = allocated && strcmp(expected, result) == 0;
+		int length_ok = allocated &&
+			strlen(expected) == strlen(result);
+		int null_terminated = allocated &&
+			result[strlen(tests[i])] == '\0';
+
+		printf("\"%s\"\n", tests[i]);
+		printf("  allocated:     %s\n", allocated ? OK : FAIL);
+		printf("  content:       %s\n", content_ok ? OK : FAIL);
+		printf("  length:        %s\n", length_ok ? OK : FAIL);
+		printf("  null byte:     %s\n",
+			null_terminated ? OK : FAIL);
+
+		if (allocated && content_ok && length_ok && null_terminated)
+			printf("  RESULT:        " OK "\n");
+		else
+			printf("  RESULT:        " FAIL "\n");
+
+		free(expected);
+		free(result);
+	}
+}
+
 int main(void)
 {
 	test_strlen();
@@ -307,6 +353,8 @@ int main(void)
 
 	test_read();
 	test_read_error();
+
+	test_strdup();
 
 	return 0;
 }
