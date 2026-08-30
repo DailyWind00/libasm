@@ -10,6 +10,7 @@ size_t	ft_strlen(const char *s);
 char	*ft_strcpy(char *dest, const char *src);
 int		ft_strcmp(const char *s1, const char *s2);
 ssize_t ft_write(int fd, const void *buf, size_t count);
+ssize_t ft_read(int fd, void *buf, size_t count);
 
 static void test_strlen(void)
 {
@@ -178,6 +179,120 @@ static void test_write(void)
 		printf("SUCCESS TEST: " FAIL "\n");
 }
 
+static void test_write_error(void)
+{
+	const char *str = "This should fail\n";
+
+	printf("\n========== ft_write error ==========\n");
+
+	errno = 0;
+	ssize_t expected = write(-1, str, strlen(str));
+	int expected_errno = errno;
+
+	errno = 0;
+	ssize_t result = ft_write(-1, str, strlen(str));
+	int result_errno = errno;
+
+	printf("libc:      return = %zd, errno = %d (%s)\n",
+		expected, expected_errno, strerror(expected_errno));
+
+	printf("ft_write:  return = %zd, errno = %d (%s)\n",
+		result, result_errno, strerror(result_errno));
+
+	if (result == expected && result_errno == expected_errno)
+		printf("ERROR TEST: " OK "\n");
+	else
+		printf("ERROR TEST: " FAIL "\n");
+}
+
+
+static void test_read(void)
+{
+	int pipefd[2];
+	char expected[64];
+	char result[64];
+	const char *message = "Hello from ft_read!";
+
+	printf("\n========== ft_read ==========\n");
+
+	if (pipe(pipefd) == -1)
+	{
+		perror("pipe");
+		return;
+	}
+
+	/* Write data into the pipe */
+	write(pipefd[1], message, strlen(message));
+	close(pipefd[1]);
+
+	/* Test ft_read */
+	errno = 0;
+	ssize_t result_size = ft_read(pipefd[0], result, sizeof(result) - 1);
+
+	/* Test libc read with the same data */
+	int pipefd2[2];
+	if (pipe(pipefd2) == -1)
+	{
+		perror("pipe");
+		close(pipefd[0]);
+		return;
+	}
+
+	write(pipefd2[1], message, strlen(message));
+	close(pipefd2[1]);
+
+	errno = 0;
+	ssize_t expected_size = read(pipefd2[0], expected, sizeof(expected) - 1);
+
+	close(pipefd[0]);
+	close(pipefd2[0]);
+
+	if (result_size >= 0)
+		result[result_size] = '\0';
+	else
+		result[0] = '\0';
+
+	if (expected_size >= 0)
+		expected[expected_size] = '\0';
+	else
+		expected[0] = '\0';
+
+	printf("Expected: \"%s\" (%zd bytes)\n", expected, expected_size);
+	printf("Got:      \"%s\" (%zd bytes)\n", result, result_size);
+
+	if (result_size == expected_size &&
+		strcmp(result, expected) == 0)
+		printf("SUCCESS TEST: " OK "\n");
+	else
+		printf("SUCCESS TEST: " FAIL "\n");
+}
+
+static void test_read_error(void)
+{
+	char buffer[16];
+
+	printf("\n========== ft_read error ==========\n");
+
+	errno = 0;
+	ssize_t expected = read(-1, buffer, sizeof(buffer));
+	int expected_errno = errno;
+
+	errno = 0;
+	ssize_t result = ft_read(-1, buffer, sizeof(buffer));
+	int result_errno = errno;
+
+	printf("libc:     return = %zd, errno = %d (%s)\n",
+		expected, expected_errno, strerror(expected_errno));
+
+	printf("ft_read:  return = %zd, errno = %d (%s)\n",
+		result, result_errno, strerror(result_errno));
+
+	if (result == expected && result_errno == expected_errno)
+		printf("ERROR TEST: " OK "\n");
+	else
+		printf("ERROR TEST: " FAIL" \n");
+}
+
 int main(void)
 {
 	test_strlen();
@@ -188,6 +303,10 @@ int main(void)
 	test_strcmp_unsigned();
 
 	test_write();
+	test_write_error();
+
+	test_read();
+	test_read_error();
 
 	return 0;
 }
