@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #define OK "\033[1;32m[OK]\033[0m"
 #define FAIL "\033[1;31m[FAIL]\033[0m"
@@ -13,6 +14,7 @@ int		ft_strcmp(const char *s1, const char *s2);
 ssize_t ft_write(int fd, const void *buf, size_t count);
 ssize_t ft_read(int fd, void *buf, size_t count);
 char 	*ft_strdup(const char *s);
+void	*ft_calloc(size_t nmemb, size_t size);
 
 static void test_strlen(void)
 {
@@ -339,6 +341,83 @@ static void test_strdup(void)
 	}
 }
 
+static void test_calloc(void)
+{
+	printf("\n========== ft_calloc ==========\n");
+
+	// Normal allocation
+	int *numbers = ft_calloc(10, sizeof(int));
+	printf("Normal allocation:       %s\n",
+		numbers != NULL ? OK : FAIL);
+	free(numbers);
+
+	// Memory initialization
+	unsigned char *buffer = ft_calloc(32, sizeof(unsigned char));
+	int zeroed = buffer != NULL;
+
+	if (buffer)
+	{
+		for (int i = 0; i < 32; i++)
+		{
+			if (buffer[i] != 0)
+				zeroed = 0;
+		}
+	}
+
+	printf("Zero initialization:     %s\n", zeroed ? OK : FAIL);
+	free(buffer);
+
+	// Zero-sized allocations
+	void *zero_nmemb = ft_calloc(0, sizeof(int));
+	void *zero_size = ft_calloc(10, 0);
+
+	printf("Zero nmemb:              %s\n", OK);
+	printf("Zero size:               %s\n", OK);
+
+	free(zero_nmemb);
+	free(zero_size);
+
+	// Larger allocation
+	buffer = ft_calloc(1024, 1024);
+	printf("Large allocation:        %s\n",
+		buffer != NULL ? OK : FAIL);
+	free(buffer);
+
+	// Overflow detection
+	void *overflow1 = ft_calloc(SIZE_MAX, 2);
+	void *overflow2 = ft_calloc(SIZE_MAX / 2 + 1, 2);
+	void *overflow3 = ft_calloc(SIZE_MAX, SIZE_MAX);
+
+	printf("Overflow SIZE_MAX * 2:   %s\n",
+		overflow1 == NULL ? OK : FAIL);
+	printf("Overflow near boundary:  %s\n",
+		overflow2 == NULL ? OK : FAIL);
+	printf("Overflow SIZE_MAX:       %s\n",
+		overflow3 == NULL ? OK : FAIL);
+
+	free(overflow1);
+	free(overflow2);
+	free(overflow3);
+
+	// Independent allocations
+	unsigned char *a = ft_calloc(16, 1);
+	unsigned char *b = ft_calloc(16, 1);
+
+	int independent = 0;
+
+	if (a && b)
+	{
+		a[0] = 42;
+		independent = (b[0] == 0);
+	}
+
+	printf("Independent allocations: %s\n",
+		independent ? OK : FAIL);
+
+	free(a);
+	free(b);
+}
+
 int main(void)
 {
 	test_strlen();
@@ -355,6 +434,8 @@ int main(void)
 	test_read_error();
 
 	test_strdup();
+
+	test_calloc();
 
 	return 0;
 }
